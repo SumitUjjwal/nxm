@@ -1,23 +1,29 @@
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
 
 
 const authenticate = (req, res, next) => {
-       // const token = req.headers.authorization || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb3Vyc2UiOiJiYWNrZW5kIiwiaWF0IjoxNjczNjM0Mjc5fQ.R4Tc5iPs-JLxM0pYpzQ1bami12wqiaDmi61hUv-eh3Y"
        const token = req.headers.authorization
        if (token) {
-              const decoded_token = jwt.verify(token, "masai")
-              if (decoded_token) {
-                     next()
+              const blacklisted = JSON.parse(fs.readFileSync("./blacklist.json", "utf8"));
+              if (blacklisted.includes(token)) {
+                     res.json({ "msg": "Please Login Again" });
               }
               else {
-                     res.json({ "msg": "Please Login First" })
+                     const decoded_token = jwt.verify(token, "masai")
+                     if (decoded_token) {
+                            console.log(decoded_token)
+                            next();
+                     }
+                     else {
+                            res.json({ "msg": "User not Authorized" });
+                     }
               }
        }
        else {
-              res.json({ "msg": "Please Login First" })
+              res.json({ "msg": "Please Login Again" });
        }
 }
-
 
 module.exports = {
        authenticate
