@@ -3,6 +3,7 @@ const { UserModel } = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const fs = require("fs");
+const { newToken } = require("../middlewares/newToken.middleware");
 
 const userRouter = express.Router();
 userRouter.use(express.json());
@@ -51,10 +52,20 @@ userRouter.post("/login", async (req, res) => {
               if (user) {
                      bcrypt.compare(password, user["password"], async (err, result) => {
                             if (result) {
-                                   const token = jwt.sign({ name: user.username }, 'masai', { expiresIn: 120000 });
-                                   const refresh_token = jwt.sign({ name: user.username }, 'masai', { expiresIn: "7d" });
+                                   const token = jwt.sign({ email: user.email }, 'masai', { expiresIn: 50 });
+                                   const refresh_token = jwt.sign({ email: user.email }, 'masai', { expiresIn: "7d" });
                                    res.cookie("token", token).cookie("refresh_token", refresh_token);
-                                   res.json({ "msg": "Logged in Successfully", "token": token, "refresh_token": refresh_token });
+                                   res.json({ "msg": "Logged in Successfully", "token": token, refresh_token});
+                                   // setInterval(() => {
+                                   //        const token = req.headers.authorization;
+                                   //        const blacklisted = JSON.parse(fs.readFileSync("./blacklist.json", "utf8"));
+
+                                   //        if (token) {
+                                   //               blacklisted.push(token);
+                                   //               fs.writeFileSync("./blacklist.json", JSON.stringify(blacklisted))
+                                   //               res.json({ "msg": "Logged out Successfully" });
+                                   //        }
+                                   // },50)
                             }
                             else {
                                    console.log("wrong credentials");
@@ -71,18 +82,20 @@ userRouter.post("/login", async (req, res) => {
        }
 })
 
-// userRouter.post("/newtoken", async (req, res) => {
-//        const token = req.headers.authorization;
-//        const refresh_token = req.headers.refresh_token;
-//        const blacklisted = JSON.parse(fs.readFileSync("./blacklist.json", "utf8"));
+userRouter.post("/newtoken", newToken, async (req, res) => {
+       // const token = req.headers.authorization;
+       const refreshToken = req.headers.refresh_token;
+       // const blacklisted = JSON.parse(fs.readFileSync("./blacklist.json", "utf8"));
 
-//        if (refresh_token && blacklisted.includes(token)){
-//               const token = jwt.sign({ name: user.username }, 'masai', { expiresIn: 120000 });
-//               const refresh_token = jwt.sign({ name: user.username }, 'masai', { expiresIn: "7d" });
-//               res.cookie("token", token).cookie("refresh_token", refresh_token);
-//               res.json({ "msg": "Logged in Successfully", "token": token, "refresh_token": refresh_token });
-//        }
-// })
+       if (refreshToken){
+              const decoded_token = jwt.verify(refreshToken, "masai");
+              // console.log(decoded_token.email);
+              const token = jwt.sign({ email: decoded_token.email }, 'masai', { expiresIn: 50 });
+              const refresh_token = jwt.sign({ email: decoded_token.email }, 'masai', { expiresIn: "7d" });
+              res.cookie("token", token).cookie("refresh_token", refresh_token);
+              res.json({ "msg": "Logged in Successfully", "token": token, refresh_token });
+       }
+})
 
 userRouter.get("/logout", (req, res) => {
        const token = req.headers.authorization;

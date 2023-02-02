@@ -18,7 +18,7 @@ app.get("/", async (req, res) => {
 
 app.use("/user", userRouter);
 app.use(authenticate);
-app.use(newToken);
+// app.use(newToken);
 app.use("/about", aboutRouter);
 app.use("/data", dataRouter);
 
