@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const fs = require("fs");
 const { newToken } = require("../middlewares/newToken.middleware");
+const cookieParser = require('cookie-parser')
 
 const userRouter = express.Router();
 userRouter.use(express.json());
@@ -48,14 +49,15 @@ userRouter.post("/login", async (req, res) => {
        const { email, password } = req.body;
        try {
               const user = await UserModel.findOne({ email });
-              // console.log(user);
+              console.log(user);
               if (user) {
                      bcrypt.compare(password, user["password"], async (err, result) => {
                             if (result) {
-                                   const token = jwt.sign({ email: user.email }, 'masai', { expiresIn: 50 });
-                                   const refresh_token = jwt.sign({ email: user.email }, 'masai', { expiresIn: "7d" });
+                                   // const token = jwt.sign({ email: user.email }, 'nxm', { expiresIn: 100 });
+                                   const token = jwt.sign({ email: user.email, role: user.role }, 'nxm');
+                                   const refresh_token = jwt.sign({ email: user.email, role: user.role }, 'masai', { expiresIn: 200 });
                                    res.cookie("token", token).cookie("refresh_token", refresh_token);
-                                   res.json({ "msg": "Logged in Successfully", "token": token, refresh_token});
+                                   res.json({ "msg": "Logged in Successfully", token, refresh_token});
                                    // setInterval(() => {
                                    //        const token = req.headers.authorization;
                                    //        const blacklisted = JSON.parse(fs.readFileSync("./blacklist.json", "utf8"));
@@ -84,16 +86,16 @@ userRouter.post("/login", async (req, res) => {
 
 userRouter.post("/newtoken", newToken, async (req, res) => {
        // const token = req.headers.authorization;
-       const refreshToken = req.headers.refresh_token;
+       const refresh_token = req.headers.refresh_token;
        // const blacklisted = JSON.parse(fs.readFileSync("./blacklist.json", "utf8"));
 
-       if (refreshToken){
-              const decoded_token = jwt.verify(refreshToken, "masai");
+       if (refresh_token){
+              const decoded_token = jwt.verify(refresh_token, "masai");
               // console.log(decoded_token.email);
-              const token = jwt.sign({ email: decoded_token.email }, 'masai', { expiresIn: 50 });
-              const refresh_token = jwt.sign({ email: decoded_token.email }, 'masai', { expiresIn: "7d" });
+              const token = jwt.sign({ email: decoded_token.email, role: decoded_token.role }, 'nxm', { expiresIn: 100 });
+              // const refresh_token = jwt.sign({ email: decoded_token.email }, 'masai', { expiresIn: "7d" });
               res.cookie("token", token).cookie("refresh_token", refresh_token);
-              res.json({ "msg": "Logged in Successfully", "token": token, refresh_token });
+              res.json({ "msg": "Logged in Successfully", token, refresh_token });
        }
 })
 

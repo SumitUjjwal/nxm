@@ -10,14 +10,17 @@ const authenticate = (req, res, next) => {
                      res.json({ "msg": "Please Login Again" });
               }
               else {
-                     const decoded_token = jwt.verify(token, "masai")
-                     if (decoded_token) {
-                            console.log(decoded_token)
-                            next();
-                     }
-                     else {
-                            res.json({ "msg": "User not Authorized" });
-                     }
+                     const decoded_token = jwt.verify(token, "nxm", (err, decoded) => {
+                            if(err){
+                                   res.json({"msg": "Invalid Normal Token - Please Login Again", "err": err.message});
+                            }
+                            else{
+                                   const userrole = decoded.role;
+                                   req.headers.userrole = userrole;
+                                   console.log(userrole);
+                                   next();
+                            }
+                     })
               }
        }
        else {
